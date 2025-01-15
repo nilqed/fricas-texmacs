@@ -1,0 +1,29 @@
+-- texmacs -x "(begin (make-session \"fricas\" \"default\")(display \"Hello\"))"
+-- fri$ ==> starts fricas session
+--  texmacs -x "(begin 
+--    (make-session \"fricas\" \"default\")(insert  \"Hello\"))"
+
+
+--start with in work/fricas+texmacs:  ./tmfs.sh $PWD/test_serializer.input
+quickLoad tmspt
+ioHook()
+setFricasPrompt("",". ")
+
+removeBanner()
+foldAllFields()
+tmMathOn()
+tmMath(s) == s
+toggleMathInput()
+input "\int_a^b f(x) \mathd x"
+-- evaluateAll()
+
+
+
+
+
+
+
+
+
+
+
