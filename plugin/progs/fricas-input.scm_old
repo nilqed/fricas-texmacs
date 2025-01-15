@@ -14,21 +14,10 @@
 (texmacs-module (fricas-input)
   (:use (utils plugins plugin-convert)))
 
-
-;; Symbols in the following list have "big" variants created automatically if
-;; they are used as a big operator, e.g.: cap -> bigcap, vee -> bigvee etc.,
-;; so that the base symbols can be used as binary functions or operators at
-;; the same time. (TODO: This is probably incomplete, add others as needed.)
-(define fricas-big-ops
-  (list "cap" "cup" "sqcap" "sqcup" "vee" "wedge" "curlyvee" "curlywedge"
-	"uplus" "box" "oplus" "otimes" "odot"));
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific conversion routines
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; var-row: , a, b, c,..
 (define (fricas-input-var-row r)
   (if (nnull? r)
       (begin
@@ -36,14 +25,12 @@
         (plugin-input (car r))
         (fricas-input-var-row (cdr r)))))
 
-;; row: [a, b, c, ...]
 (define (fricas-input-row r)
   (display "[")
   (plugin-input (car r))
   (fricas-input-var-row (cdr r))
   (display "]"))
 
-;; var-rows: , [a1, b1, c1, ...], [a2, b2, c2, ...], ...
 (define (fricas-input-var-rows t)
   (if (nnull? t)
       (begin
@@ -51,27 +38,22 @@
         (fricas-input-row (car t))
         (fricas-input-var-rows (cdr t)))))
 
-;; rows: matrix([[a1, b1, c1, ...], [a2, b2, c2, ...], ...])
-;; is this wise?
 (define (fricas-input-rows t)
   (display "matrix([")
   (fricas-input-row (car t))
   (fricas-input-var-rows (cdr t))
   (display "])"))
 
-;; last car
 (define (fricas-input-descend-last args)
   (if (null? (cdr args))
       (plugin-input (car args))
       (fricas-input-descend-last (cdr args))))
 
-;; what for?
 (define (fricas-input-det args)
   (display "determinant(")
   (fricas-input-descend-last args)
   (display ")"))
 
-;; binomial(n,k)
 (define (fricas-input-binom args)
   (display "binomial(")
   (plugin-input (car args))
@@ -79,7 +61,6 @@
   (plugin-input (cadr args))
   (display ")"))
 
-;; sqrt(??)
 (define (fricas-input-sqrt args)
   (if (= (length args) 1)
       (begin
@@ -93,7 +74,7 @@
         (plugin-input (cadr args))
         (display "))"))))
 
-;; sum
+
 (define (fricas-input-sum args)
   (if (nnull? args)
       (if (nnull? (cdr args))
@@ -109,7 +90,6 @@
             (display ",")))
       (display "sum(")))
 
-;; prod
 (define (fricas-input-prod args)
   (if (nnull? args)
       (begin
@@ -122,7 +102,6 @@
         (display ","))
       (display "prod(")))
 
-;; integrate
 (define (fricas-input-int args)
   (if (nnull? args)
       (begin
@@ -136,7 +115,6 @@
       (display "integrate(")))
 
 
-;; big-around ??
 (define (fricas-input-big-around args)
   (let* ((b `(big-around ,@args))
 	 (op (big-name b))
@@ -154,11 +132,13 @@
     (display ")")))
 
 
- (plugin-input-converters fricas
+
+(plugin-input-converters fricas
   (rows fricas-input-rows)
   (det fricas-input-det)
-  (big-around fricas-input-big-around)
+  (sqrt fricas-input-sqrt)
   (binom fricas-input-binom)
+  (big-around fricas-input-big-around)
   ("<in>"         " in ")
   ("<infty>"      "%infinity")
   ("<emptyset>"   "[]")
@@ -538,86 +518,8 @@
   ("<bbb-W>" display)
   ("<bbb-X>" display)
   ("<bbb-Y>" display)
-  ("<bbb-Z>" display))
+  ("<bbb-Z>" display)
 
 ;;  ("<less>" display)
 ;;  ("<gtr>" display)
-
-
-
-(plugin-input-converters fricas2
-   ("("              " @lpar ")
-   (")"              " @rpar ") 
-   ("["              " @lbrack ")
-   ("]"              " @rbrack ")
-   ("{"              " @lbrace ")
-   ("}"              " @rbrace ")   
-   (">"              " @gt ")
-   ("<"              " @lt ")
-   ("="              " @eq ")
-   ("*"              " @mult ")
-   ("+"              " @plus ") 
-   ("-"              " @minus ")
-   ("/"              " @slash ") 
-   (","              " @comma ")
-   ("."              " @dot   ")
-   (":"              " @colon ")
-   (":="             " @assign ")
-   ("<langle>"       " @langle ")
-   ("<rangle>"       " @rangle ")
-   ("<ldots>"        " @ldots ")
-   ("<cdots>"        " @cdots ")  
-   ("<in>"           " @in ")
-   ("<cap>"          " @cap ")
-   ("<cup>"          " @cup ")
-   ("<subset>"       " @subset ")
-   ("<mapsto>"       " @mapsto ")
-   ("<leftarrow>"    " @leftarrow ")
-   ("<rightarrow>"   " @rightarrow ")
-   ("<vee>"          " @vee ")
-   ("<neg>"          " @neg ")
-   ("<equiv>"        " @equiv ")
-   ("<circ>"         " @circ ")
-   ("<star>"         " @star ")
-   ("<neq>"          " @neq ")
-   ("<leq>"          " @leq ")
-   ("<geq>"          " @geq ")
-   ("<leqslant>"     " @leq ")
-   ("<geqslant>"     " @geq ")
-   ("<times>"        " @times ")
-   ("<wedge>"        " @wedge ")
-   ("<forall>"       " @forall ")
-   ("<exists>"       " @exists ")
-   ("<partial>"      " @partial ")
-   ("<emptyset>"     " @emptyset ")
-   ;
-   ("<bbb-A>" "@AA")
-   ("<bbb-B>" "@BB")
-   ("<bbb-C>" "@CC")
-   ("<bbb-D>" "@DD")
-   ("<bbb-E>" "@EE")
-   ("<bbb-F>" "@FF")
-   ("<bbb-G>" "@GG")
-   ("<bbb-H>" "@HH")
-   ("<bbb-I>" "@II")
-   ("<bbb-J>" "@JJ")
-   ("<bbb-K>" "@KK")
-   ("<bbb-L>" "@LL")
-   ("<bbb-M>" "@MM")
-   ("<bbb-N>" "@NN")
-   ("<bbb-O>" "@OO")
-   ("<bbb-P>" "@PP")
-   ("<bbb-Q>" "@QQ")
-   ("<bbb-R>" "@RR")
-   ("<bbb-S>" "@SS")
-   ("<bbb-T>" "@TT")
-   ("<bbb-U>" "@UU")
-   ("<bbb-V>" "@VV")
-   ("<bbb-W>" "@WW")
-   ("<bbb-X>" "@XX")
-   ("<bbb-Y>" "@YY")
-   ("<bbb-Z>" "@ZZ"))
-   
-   
-
-
+)

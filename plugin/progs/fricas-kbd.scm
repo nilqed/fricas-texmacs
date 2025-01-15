@@ -18,5 +18,7 @@
   (fricas-scripts-math% #t fricas-scripts% in-math%))
 
 (kbd-map
+   ;; CTRL-$ toogle math input
+  ;;("C-$" (toggle-session-math-input))
   (:mode fricas-scripts-math?)
   (": =" (insert '(script-assign))))

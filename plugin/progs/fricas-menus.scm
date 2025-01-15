@@ -41,8 +41,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (menu-extend texmacs-extra-menu
-    (=> "Fricas"
-    
+    (=> "FriCAS"
+
+
+      (-> "Online"
+         ("Github" (system "firefox https://fricas.github.io"))
+         ("QGLE"   (system "qgle")))
+
+
+      (-> "Misc"    
       ("Last result(s)... % or %%(+-n)" (insert "%"  ))
       ("Assignment ... x:=1"            (insert ":=" ))
       ("Type declaration ... y:Integer" (insert ":"  ))
@@ -50,7 +57,7 @@
       ("Line continuation ... abc_"     (insert "_"  ))
       ("Comments ... -- double dash"    (insert "--" ))
       ("Function ... f(x) == x^2"       (insert "==" ))
-      ("Macro    ... macro df == D"     (insert "macro ? ==" ))
+      ("Macro    ... macro df == D"     (insert "macro ? ==" )))
        
       ---   
       (-> "Predefined macros"

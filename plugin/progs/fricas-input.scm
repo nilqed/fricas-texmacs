@@ -91,39 +91,86 @@
   (display ")"))
 
 
-;(define (frac-derivative-list? t)
-;  (if (and (list? (car t)) (list? (cadr t)))
-;    (if (and (string-contains? (caar t) "d")
-;             (string-contains? (caadr t) "d")) #t #f) #f))
+;;;
+;;; NEW: pattern matching for "fractions" to
+;;; detect derivatives. We will use the "match?"
+;;; function (maybe "select" as well).
+;;;
 
-(define (frac-derivative? t1 t2)
-  (if (and (string? t1) (string? t2))
-    (if (and (string-contains? t1 "<mathd>")
-           (string-contains? t2 "<mathd>")) #t #f)) #f)
+;; for debug / matches every a/b
+(define p0 '('x 'y)) 
+
+;; matches df(x)/dx (incl. partial)
+(define p1 '((concat 'x1  (around* "(" 'x2 ")" )) 'y)) 
+
+;; matches d^m f(x) / dx^m (incl. partial single denom)
+(define p2 '((concat 'x1 (rsup 'x2) 'x3 (around* "(" 'x4 ")" )) (concat 'y1 (rsup 'y2))))
+
+;; TODO: mixed partials and d: expressions
+
+;; (string-any (lambda (x) (== x #\d)) "d f" 0 1)
+;; (string-prefix? "d" (string-trim " d f "))
+;; (string-prefix? "<mathd>" (string-trim " <mathd> f ")) / <partial> ...
 
 
-(define (fricas-standard-frac t)
+;; Check if s contains a derivative symbol
+(define (is-deriv? s)
+  (or (string-prefix? "d" (string-trim s))
+      (string-prefix? "<mathd>" (string-trim s))
+      (string-prefix? "<partial>" (string-trim s))))
+ 
+;; Remove derivative symbol from string (if is-deriv?)
+(define (strip-deriv-op s)
+  (let ((ts (string-trim s)))
+    (cond 
+      ( (string-prefix? "d" ts) (string-trim (string-drop ts 1)) )
+      ( (string-prefix? "<mathd>" ts) (string-trim (string-drop ts 7)) )
+      ( (string-prefix? "<partial>" ts) (string-trim (string-drop ts 9)) )
+      ( else ts)
+    )))
+
+;; Handle pattern p1.
+(define (handle-p1 t p) 
+  (let* ((m1 (match? t p))
+    (x1 (assq-ref (car m1) 'x1))
+    (x2 (assq-ref (car m1) 'x2))
+    (y (assq-ref (car m1) 'y))) 
+    (if (and (is-deriv? x1) (is-deriv? y))
+      (display (string-join 
+        (list "D(" (strip-deriv-op x1) "(" x2 ")," (strip-deriv-op y) ")")))  
+      (fricas-std-frac t))))
+      
+;; Handle pattern p2.
+(define (handle-p2 t p) 
+  (let* ((m1 (match? t p))
+    (x1 (assq-ref (car m1) 'x1))
+    (x2 (assq-ref (car m1) 'x2))
+    (x3 (assq-ref (car m1) 'x3))
+    (x4 (assq-ref (car m1) 'x4))
+    (y1 (assq-ref (car m1) 'y1))
+    (y2 (assq-ref (car m1) 'y2))) 
+    (if (and (is-deriv? x1) (is-deriv? y1) (== (string-trim x2) (string-trim y2)))
+      (display (string-join 
+        (list "D(" x3 "(" x4 ")," (strip-deriv-op y1) "," (string-trim x2)  ")")))  
+      (fricas-std-frac t))))
+
+
+;; fractions
+;; TODO: might be a derivative?
+(define (fricas-std-frac t)
   (display "((")
   (plugin-input (car t))
   (display ")/(")
   (plugin-input (cadr t))
   (display "))"))
   
- ;(begin
-  ;     (display "D(")
-  ;     (display (string-replace (car t) "<mathd>" ""))
-  ;     (display ",")
-  ;     (display (string-replace (cadr t) "<mathd>" ""))
-  ;     (display ")")
-  ;     )
-
-;; fractions
-;; TODO: might be a derivative?
 (define (fricas-frac t)
-  (cond ((frac-derivative? (car t) (cadr t)) (display "frac-derivative-1"))
-        ((frac-derivative? (car t) (cadr t)) (display "frac-derivative-2"))
-     (else (fricas-standard-frac t))))
-       
+  (cond
+    ;((match? t p0) (begin (display "p0") (display (match? t p0)))) 
+    ((match? t p1) (handle-p1 t p1))
+    ((match? t p2) (handle-p2 t p2))
+    (else (fricas-std-frac t))))
+
 
 ;; Brackets: |.| and ||.|| are mapped to abs and norm, respectively, others
 ;; are left as is.
@@ -556,12 +603,12 @@
   ;; Differentials. These are taken care of in texmacs.pure.
   ("<partial>"    " d ")
   ("<mathd>"      " d ")
-  ;; FriCAS uses this to display empty lists, so we follow suit and
+  ;; Reduce/tmprint uses this to display empty lists, so we follow suit and
   ;; allow this on the input side as well. Change this if you'd like this
-  ;; symbol to produce a different container (such as a set) instead.
+  ;; symbol to produce a different Pure container (such as a set) instead.
   ("<emptyset>"   "[]")
 
-  ("<longequal>" "==") ;; FriCAS (==)
+  ("<longequal>" "==") ;; equality in Pure
   ("<assign>" ":=")
   ("<plusassign>" "+=")
   ("<minusassign>" "-=")
