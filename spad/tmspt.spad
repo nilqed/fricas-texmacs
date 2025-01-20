@@ -1,0 +1,494 @@
+)abbrev package TMSPT TexmacsSupport
+++ Author: Kurt Pagani
+++ Date Created: Sun Jan 19 02:19:26 CET 2020
+++ Date Revised: So 20 Okt 2024 18:24:51 CEST
+++ License: BSD
+++ References:  
+++   https://github.com/texmacs/texmacs/tree/master/TeXmacs/progs
+++   TeXmacs - Scheme Developer Guide [texmacs-scheme.en.pdf]
+++ Description:
+++   TeXmacs support package.
+++   Control of TeXmacs Interface/GUI from FriCAS.
+++   E.g. toggling header/footer, including images, adding/removing style files
+++   and so on.
+++   Rev. added: lispEval, ioHook (font-size, font-color in BOOT)
+++     e.g. FONT_-SIZE$Lisp -> "tiny" 
+++     setFricasPrompt (similar to macro in fricas.input)
+++
+TexmacsSupport() : Exports == Implementation where
+  
+  sys(s) ==> systemCommand(s)$MoreSystemCommands
+  
+  Exports ==  with
+    
+    
+    message  : (String,String) -> Void
+      ++ message(typ,msg) send a message to TeXmacs where 'typ' is one
+      ++ of {ps,latex,verbatim,html,command,scheme,prompt#,input#,output#}
+      ++ and 'msg' a corresponding string. 
+    
+    verbatim : String -> Void
+      ++ verbatim(s) is shorthand for message("verbatim",s). The string s
+      ++ will be output 'verbatim' in TeXmacs.
+    command  : String -> Void
+      ++ command(s) is shorthand for message("command",s). The command 
+      ++ s will be execute in TeXmacs.
+    latex    : String -> Void
+      ++ latex(s) is shorthand for message("latex",s). The string s 
+      ++ containing LaTeX code is rendered in TeXmacs.
+    scheme   : String -> Void
+      ++ scheme(s) is shorthand for message("scheme",s). The scheme code
+      ++ s is interpreted in TeXmacs.
+    html     : String -> Void
+      ++ html(s) is shorthand for message("html",s). The HTML code in s
+      ++ is rendered (as much as possible) in TeXmacs.
+    ps       : String -> Void
+      ++ ps(s) is shorthand for message("ps",s). The postscript code in s
+      ++ is rendered in TeXmacs.
+	
+    output   : String -> Void
+      ++ output(s) is shorthand for message("output#",s). The string s
+      ++ is output in TeXmacs.
+    prompt   : String -> Void
+      ++ prompt(s) is shorthand for message("prompt#",s).
+    input    : String -> Void
+      ++ input(s) is shorthand for message("input#",s). The string s
+      ++ will be written into an input field of TeXmacs (session). E.g
+      ++ input "D(sin x,x)".
+    
+    addStyle    : String -> Void
+      ++ addStyle(s) adds the style s into current session. 
+    removeStyle : String -> Void
+      ++ removeStyle(s) removes the style s from the current session.
+    
+    toggleHeader : () -> Void
+      ++ toggleHeader() shows or hides the TeXmacs top header (menus, icons).
+    toggleFooter : () -> Void
+      ++ toggleFooter() shows or hides the TeXmacs footer (status bar etc.).
+    
+    insertTextFieldAbove : () -> Void
+      ++ insertTextFieldAbove() inserts a text field just above the current
+      ++ input field.
+    insertTextFieldBelow : () -> Void
+      ++ insertTextFieldBelow() inserts a text field just below the current
+      ++ input field.
+
+    addDefaultStyle    : () -> Void
+      ++ addDefaultStyle() adds the default style.
+    removeDefaultStyle : () -> Void
+      ++ removeDefaultStyle() removes the default style.   
+    inlineImage : String -> Void
+      ++ inlineImage(img) inserts an image 'img' after the current input
+      ++ field.
+    inlineImage : (String, String, String, String, String) -> Void
+      ++ inlineImage(img) inserts an image 'img' after the current input
+      ++ field, and sets width w, height h, and offset x,y position.
+      ++ Example: inlineImage ("abc","200pt","100pt","20pt","10pt")
+      ++ --> (make-inline-image (list "abc" "200pt" "100pt" "20pt" "10pt"))
+    linkImage : String -> Void
+      ++ linkImage(img) inserts a hyperlink to the image 'img' after the 
+      ++ current input field.
+
+    tmActive? : () -> Boolean
+      ++ tmActive?() is true when TeXmacs is active, that is when fricas
+      ++ was started with the '.texmacs' option.
+
+    toggleMathInput   :  () -> Void
+      ++ toggleMathInput() toggles between math input and standard input.
+    toggleMultilineInput   :  () -> Void
+      ++ toggleMultilineInput() toggles between single line input and multiline
+      ++ input.
+    toggleMathOutput   :  () -> Void
+      ++ toggleMathOutput() toggles between standard (ASCII) output and
+      ++ math output (rendered).
+    toggleTreeOutput   :  () -> Void
+      ++ toggleTreeOutput() toggles tree output.
+    toggleSchemeTreeOutput   :  () -> Void
+      ++ toggleSchemeTreeOutput() toggles scheme tree output.
+    showTimings   :  () -> Void
+      ++ showTimings() shows process time information. Note that this is
+      ++ not the same as FriCAS timing.
+    clearAllFields   :  () -> Void
+      ++ clearAllFields() clears all fields.
+    foldAllFields   :  () -> Void
+      ++ foldAllFields() folds all fields.
+    unfoldAllFields   :  () -> Void
+      ++ unfoldAllFields() unfolds all fields.
+    evaluateFieldsInOrder   :  () -> Void
+      ++ evaluateFieldsInOrder() evaluates all fields in order.
+    createSubsession   :  () -> Void
+      ++ createSubsession() creates a subsession.
+    splitSession   :  () -> Void 
+      ++ splitSession() splits the session. 
+    sessionEval   :  () -> Void
+      ++ sessionEval() evaluates the current session. 
+    evaluateAll   :  () -> Void
+      ++ evaluateAll() evaluates everything.
+    evaluateAbove   :  () -> Void
+      ++ evaluateAbove() evaluates the input field above. 
+    evaluateBelow   :  () -> Void
+      ++ evaluateBelow() evaluates the input field below.
+    previousField   :  () -> Void
+      ++ previousField() focus to the previous field. 
+    nextField   :  () -> Void
+      ++ nextField() go to the next field.
+    firstField   :  () -> Void
+      ++ firstField() go to the first field.
+    lastField   :  () -> Void
+      ++ lastField() go to the last field.    
+    insertFieldAbove   :  () -> Void
+      ++ insertFieldAbove() inserts a new input field above.
+    insertFieldBelow   :  () -> Void
+      ++ insertFieldBelow() inserts a new input field below.    
+    removePreviousField   :  () -> Void
+      ++ removePreviousField() removes the previous field.
+    removeNextField   :  () -> Void
+      ++ removeNextField() removes the next field.
+    removeBanner   :  () -> Void
+      ++ removeBanner() removes the session banner.
+    removeLastField   :  () -> Void
+      ++ removeLastField() removes the last field.
+    closeSession   :  () -> Void
+      ++ closeSession() closes the session.
+    toggleFullScreenMode : () -> Void
+      ++ toggleFullScreenMode() switches between full screnn mode and normal
+      ++ mode. 
+    changeZoomFactor : Float -> Void
+      ++ changeZoomFactor(f) changes the zoom factor by f (floating point).
+    zoomIn : Float -> Void
+      ++ zoomIn(f) zooms in by f.
+    zoomOut: Float -> Void
+      ++ zoomOut(f) zooms out by f.
+    fitAllToScreen : () -> Void
+      ++ fitAllToScreen() fits everything to screen.
+    fitToScreen : () -> Void
+      ++ fitToScreen() fits current view to screen.
+    fitToScreenWidth : () -> Void
+      ++ fitToScreenWidth() fits to screen width. 
+    fitToScreenHeight : () -> Void
+      ++ fitToScreenHeight() fits to screen height.
+    
+    mathInput : String -> String
+      ++ mathInput(s) ???
+    
+    lispEval : String -> SExpression
+      ++ lispEval(s) evaluates the string (lisp code) in the underlying
+      ++ lisp (with which FriCAS was built).
+    setFricasPrompt : (String,String) -> SExpression
+      ++ setFricasPrompt(beg,end) redefines the FriCAS prompt. For example,
+      ++ setFricasPrompt("[","] ") has the effect: "[1] " instead of of the
+      ++ default prompt "(1)-> ".
+    ioHook : () -> Void
+      ++ ioHook() redefines the |$ioHook| function with which FriCAS -texmacs
+      ++ is started. It uses "latex" instead of "verbatim" to output "Types"
+      ++ in smaller font and colored.
+    check_iohook : () -> Boolean
+      ++ check_iohook() checks whether ioHook() has been applied.
+    setTypeFontSize : String -> SExpression
+      ++ setTypeFontSize(fs) sets the font size of the "Type:" output,
+      ++ where 'fs' is a LaTeX font size term, e.g. small, tiny.
+    setTypeFontColor : String -> SExpression
+      ++ setTypeFontColor(fc) sets the font color of the "Type:" output,
+      ++ where 'fc' is a LaTeX color, e.g. red,blue, etc.
+    
+    mainMenu : () -> Void
+      ++ mainMenu() inserts a "[FriCAS]" menu in the top header of
+      ++ TeXmacs-
+ 
+    tmMath : String -> Any
+      ++ tmMath(s) processes the string coming from the TeXmacs serializer
+      ++ "fricas-serialize" defined in the plugin /progs/init-fricas.scm 
+      ++ scheme file. Whether it is active can be controlled by the scheme
+      ++ variable fricas-tm-math? (#t or #f). For debugging purposes a "?"
+      ++ prefix show the TeXmacs math-input verbatim.
+    tmMathOn : () -> Void
+      ++ tmMathOn() sets fricas-tm-math? to #t, i.e. setting tmMath active.
+    tmMathOff : () -> Void
+      ++ tmMathOff() sets fricas-tm-math? to #f, i.e. setting tmMath inactive.
+	
+  Implementation ==  add 
+    
+    -- TeXmacs interface protocol
+    -- Message types: verbatim, latex, ps, html, scheme, command 
+    -- Channels: channel#message (input,prompt,output)
+    
+    DATA_BEGIN:String := coerce(char 2)$String
+    DATA_END:String := coerce(char 5)$String
+    
+    defaultstyle:String := "fricas-session"
+    
+    format(s:String,t:String):String == string FORMAT('NIL,s,t)$Lisp
+    format(s:String,l:List String):String == string FORMAT('NIL,s,l)$Lisp
+    
+    message(type:String, msg:String):Void == 
+      data:String := concat [DATA_BEGIN, type, msg, DATA_END] 
+      output(data)$OutputPackage
+      
+    verbatim(msg:String):Void == message("verbatim:", msg)
+    
+    command(msg:String):Void  == message("command:", msg)
+    latex(msg:String):Void    == message("latex:", msg)
+    scheme(msg:String):Void   == message("scheme:", msg)
+    html(msg:String):Void     == message("html:", msg)
+    ps(msg:String):Void       == message("ps:", msg)
+    
+    output(msg:String):Void   == message("output#", msg)
+    prompt(msg:String):Void   == message("prompt#", msg)
+    input(msg:String):Void    == message("input#", msg)
+   
+    addStyle(sty:String):Void ==
+      msg:=concat["(add-style-package ", "_"", sty, "_")"]
+      command(msg)
+      
+    removeStyle(sty:String):Void ==
+      msg:=concat["(remove-style-package ", "_"", sty, "_")"]
+      command(msg)     
+
+    toggleHeader():Void == command "(toggle-visible-header)"
+    toggleFooter():Void == command "(toggle-visible-footer)" 
+
+    insertTextFieldAbove():Void == 
+      command "(field-insert-text (focus-tree) #f))"
+      
+    insertTextFieldBelow():Void ==
+      command "(field-insert-text (focus-tree) #t))"
+      
+    addDefaultStyle():Void == addStyle defaultstyle
+    removeDefaultStyle():Void == removeStyle defaultstyle  
+    
+    inlineImage(url:String):Void ==
+      insertTextFieldAbove()
+      options:=" _"_" _"_" _"_" _"_" ))"
+      q:="_""
+      command(concat ["(make-inline-image (list ", q, url, q, options])
+   
+    linkImage(url:String):Void ==
+      options:=" _"_" _"_" _"_" _"_" ))"
+      q:="_""
+      command(concat ["(make-link-image (list ", q, url, q, options])
+
+    inlineImage(url:String, w:String,h:String,x:String,y:String):Void ==
+      insertTextFieldAbove()
+      fmt:="(make-inline-image (list _"~A_" _"~A_" _"~A_" _"~A_" _"~A_"))"
+      command string FORMAT('NIL,fmt,url,w,h,x,y)$Lisp
+
+    tmActive?():Boolean ==
+      import  MoreSystemCommands 
+      systemCommand "lisp (defun tmactive () |$texmacsFormat|)"
+      not null?(TMACTIVE()$Lisp)$SExpression
+      
+    toggleMathInput():Void ==
+      command "(toggle-session-math-input)"
+      
+    toggleMultilineInput():Void ==
+      command "(toggle-session-multiline-input)"
+
+    toggleMathOutput():Void ==
+      command "(toggle-session-scheme-math)"
+      
+    toggleTreeOutput():Void ==
+      command "(toggle-session-scheme-trees)"  
+      
+    toggleSchemeTreeOutput():Void ==
+      command "(toggle-session-scheme-strees)"  
+      
+    showTimings():Void ==
+      command "(toggle-session-output-timings)"
+      
+    clearAllFields():Void ==
+      command "(session-clear-all)"
+      
+    foldAllFields():Void ==
+      command "(session-fold-all)"
+      
+    unfoldAllFields():Void ==
+      command "(session-unfold-all)"
+      
+    evaluateFieldsInOrder():Void ==
+      command "(toggle-session-program)"
+      
+    createSubsession():Void ==
+      command "(field-insert-fold (focus-tree))"
+      
+    splitSession():Void == 
+      command "(session-split)"
+      
+    sessionEval():Void ==
+      command "(session-evaluate)"
+      
+    evaluateAll():Void ==
+      command "(session-evaluate-all)"
+      
+    evaluateAbove():Void ==
+      command "(session-evaluate-above)"
+  
+    evaluateBelow():Void ==
+      command "(session-evaluate-below)"
+      
+    previousField():Void ==
+      command "(traverse-previous)"
+      
+    nextField():Void ==
+      command "(traverse-next)"
+      
+    firstField():Void ==
+      command "(traverse-first)"
+      
+    lastField():Void ==
+      command "(traverse-last)"
+      
+    insertFieldAbove():Void ==
+      command "(field-insert (focus-tree) #f)"
+      
+    insertFieldBelow():Void ==
+      command "(field-insert (focus-tree) #t)"
+      
+    removePreviousField():Void ==
+      command "(field-remove (focus-tree) #f)"
+      
+    removeNextField():Void ==
+      command "(field-remove (focus-tree) #t)"
+      
+    removeBanner():Void ==
+      command "(field-remove-banner (focus-tree))"
+      
+    removeLastField():Void ==
+      command "(field-remove-extreme (focus-tree) #t)"
+      
+    closeSession():Void ==
+      command "(plugin-stop)"
+      
+    toggleFullScreenMode():Void ==
+      command "(toggle-full-screen-mode)"
+      
+    changeZoomFactor(z:Float):Void ==
+      z:=max((min(z, 25.0),0.04))
+      zs:String:=convert(z)$Float
+      command( concat ["(change-zoom-factor ",zs,")"])
+      
+    zoomIn(z:Float):Void ==
+      zs:String:=convert(z)$Float
+      command( concat ["(zoom-in ",zs,")"])
+      
+    zoomOut(z:Float):Void ==
+      zs:String:=convert(z)$Float
+      command( concat ["(zoom-out ",zs,")"])   
+    
+    fitAllToScreen():Void ==
+      command "(fit-all-to-screen)"
+      
+    fitToScreen():Void ==
+      command "(fit-to-screen)"
+      
+    fitToScreenWidth():Void ==
+      command "(fit-to-screen-width)"
+      
+    fitToScreenHeight():Void ==
+      command "fit-to-screen-height"
+      
+    mathInput(s:String):String == s
+   
+    lispEval(s:String):SExpression == EVAL(READ_-FROM_-STRING(s)$Lisp)$Lisp
+
+-- Set prompt as: beg # end (beg/end strings, e.g. beg="[", end="] "
+-- Default: beg:="(", end:=") -> "
+--
+    setFricasPrompt(beg,end) ==
+      fmt1:="(DEFUN MKPROMPT () (PROG () (RETURN (STRCONC "
+      fmt2:="(STRINGIMAGE |$IOindex|) "
+      fmt3:= "))))"
+      cmd:String:= fmt1  "_"" beg "_"" fmt2 "_"" end "_"" fmt3
+      lispEval cmd
+
+
+-- Redefine $ioHook in TeXmacs (tiny, coloured types)
+-- NOTE the lines in the list must not have spaces between _ and next line.
+-- We have to use systemCommand "lisp ..." because lispEval does not work
+-- properly in TeXmacs when there are control characters in the string.
+
+    ioHook() ==  
+      s:List String
+      s:=["(in-package :boot)", _
+          "(defun tm-start-prompt ()", _
+          "(princ (concat (code-char 2) _"prompt#_")))", _
+          " ", _
+          "(defun tm-end-of-output ()", _
+          "(princ (concat (code-char 5) (code-char 10))))", _
+          " ", _
+          "(defun tm-start-output () (princ (code-char 2)))", _
+          " ", _
+          "(defparameter font-size _"tiny_")", _
+          "(defparameter font-color _"darkgrey_")", _
+          "(defparameter tmspt-iohook 1)", _
+          " ", _
+          "(defun scm-for-keyed-msg (fc fs)", _
+          "(format 'nil _"latex:\\textcolor{~A}{\\~A _" fc fs))", _
+          " ", _
+          "(defun tm-start-keyed-msg ()", _
+          "(princ (concat (code-char 2)", _
+          "(scm-for-keyed-msg font-color font-size) )))", _
+          " ", _
+          " ", _
+          "(defun tm-end-of-keyed-msg ()", _
+          "(princ (concat _"}_" (code-char 5))))", _
+          " ", _
+          "(defun tm-end-of-prompt () (princ (code-char 5) ))", _
+          " ", _
+          "(setf |$ioHook| (lambda (x &optional args)", _
+          "(cond ", _
+          "((eq x '|startPrompt|) (tm-start-prompt))", _
+          "((eq x '|endOfTeXmacsOutput|) (tm-end-of-output))", _
+          "((eq x '|startTeXmacsOutput|) (tm-start-output))", _
+          "((eq x '|startKeyedMsg|) (tm-start-keyed-msg))", _
+          "((eq x '|endOfKeyedMsg|) (tm-end-of-keyed-msg))", _
+          "((eq x '|endOfPrompt|)  (tm-end-of-prompt)))))"]
+      --return convert(concat s)$SExpression -- for debugging
+      systemCommand("lisp (progn " concat(s) ")")$MoreSystemCommands
+ 
+    check_iohook():Boolean ==
+      null? lispEval "(find-symbol _"TMSPT-IOHOOK_" 'boot)" => false
+      true
+ 
+    setTypeFontSize(s) ==
+      not check_iohook() => error "run ioHook() first."
+      fs:String:=FORMAT('NIL,"(setf boot::font-size _"~A_")",s)$Lisp
+      lispEval fs
+
+    setTypeFontColor(s) ==
+      not check_iohook() => error "run ioHook() first."
+      fs:String:=FORMAT('NIL,"(setf boot::font-color _"~A_")",s)$Lisp
+      lispEval fs
+
+
+    mainMenu():Void ==
+      s:List String
+      s:=["(menu-bind fricas-main-menu",_
+            "(-> _"Online_"",_
+              "(_"Github_" (system _"firefox https://fricas.github.io _"))",_
+              "(_"QGLE_" (system _"qgle_")))",_
+            "(-> _"Closing_"",_
+              "(_"Yours sincerely_" (insert _"Yours sincerely,_"))",_
+              "(_"Greetings_" (insert _"Greetings,_"))))"] 
+      --
+      c:String:="(menu-bind texmacs-extra-menu (=> _"[FriCAS]_" "_
+                "(link fricas-main-menu)) (former))"
+      --
+      command concat s
+      command c
+
+    tmMathOn()  == command "(define fricas-tm-math? #t)"
+    tmMathOff() == command "(define fricas-tm-math? #f)"
+
+
+    tmMath(s) == 
+      if first s = char "?" then
+        --r:=interpretString("copy " s.(2..))$TemplateUtilities
+        r:=any(convert("Any")::SExpression,s pretend None)
+      else
+        r:=interpretString(s)$TemplateUtilities
+      return(r)
+
+
+    
+   
+
