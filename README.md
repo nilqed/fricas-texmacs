@@ -45,7 +45,7 @@ Example:
 
     -- If one calls the following macro, the prompt will be changed
     -- the package TMSPT will be loaded (if in ~/quicklisp/local-projects), 
-    -- the "types" output will be redefined and the stat banner will be deleted.
+    -- the "types" output will be redefined and the start banner will be deleted.
     macro tmenv ==
       setPrompt("",". ")
       quickLoad tmspt
